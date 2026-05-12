@@ -6,23 +6,24 @@ app.post('/ask', async (req, res) => {
     const { question, player, context } = req.body;
 
     try {
-        const response = await fetch("https://api.anthropic.com/v1/messages", {
+        const response = await fetch("https://api.aimlapi.com/v1/chat/completions", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "x-api-key": process.env.CLAUDE_API_KEY,
-                "anthropic-version": "2023-06-01"
+                "Authorization": "Bearer " + process.env.AIML_API_KEY
             },
             body: JSON.stringify({
-                model: "claude-haiku-4-5-20251001",
+                model: "gpt-4o-mini", // gratuit et rapide sur AIML
                 max_tokens: 150,
-                system: context,
-                messages: [{ role: "user", content: player + " demande : " + question }]
+                messages: [
+                    { role: "system", content: context },
+                    { role: "user", content: player + " demande : " + question }
+                ]
             })
         });
 
         const data = await response.json();
-        res.json({ answer: data.content[0].text });
+        res.json({ answer: data.choices[0].message.content });
 
     } catch (err) {
         res.json({ answer: "Erreur, contacte un vrai modérateur." });
