@@ -7,22 +7,22 @@ app.post('/ask', async (req, res) => {
     console.log("Requête reçue de:", player, "| Question:", question);
 
     try {
-        const response = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + process.env.GEMINI_API_KEY,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [
-                        { role: "user", parts: [{ text: context + "\n\n" + player + " demande : " + question }] }
-                    ]
-                })
-            }
-        );
+        const response = await fetch("https://api.cohere.com/v1/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + process.env.COHERE_API_KEY
+            },
+            body: JSON.stringify({
+                model: "command-a-03-2025",
+                preamble: context,
+                message: player + " demande : " + question
+            })
+        });
 
         const data = await response.json();
-        console.log("Réponse Gemini:", JSON.stringify(data));
-        res.json({ answer: data.candidates[0].content.parts[0].text });
+        console.log("Réponse Cohere:", JSON.stringify(data));
+        res.json({ answer: data.text });
 
     } catch (err) {
         console.log("Erreur:", err.message);
