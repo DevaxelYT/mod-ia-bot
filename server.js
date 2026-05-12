@@ -13,7 +13,7 @@ app.post('/ask', async (req, res) => {
                 "Authorization": "Bearer " + process.env.AIML_API_KEY
             },
             body: JSON.stringify({
-                model: "gpt-4o-mini", // gratuit et rapide sur AIML
+                model: "gpt-4o-mini",
                 max_tokens: 150,
                 messages: [
                     { role: "system", content: context },
