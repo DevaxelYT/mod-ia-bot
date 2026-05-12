@@ -4,28 +4,28 @@ app.use(express.json());
 
 app.post('/ask', async (req, res) => {
     const { question, player, context } = req.body;
+    console.log("Requête reçue de:", player, "| Question:", question);
 
     try {
-        const response = await fetch("https://api.aimlapi.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + process.env.AIML_API_KEY
-            },
-            body: JSON.stringify({
-                model: "gpt-4o-mini",
-                max_tokens: 150,
-                messages: [
-                    { role: "system", content: context },
-                    { role: "user", content: player + " demande : " + question }
-                ]
-            })
-        });
+        const response = await fetch(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + process.env.GEMINI_API_KEY,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [
+                        { role: "user", parts: [{ text: context + "\n\n" + player + " demande : " + question }] }
+                    ]
+                })
+            }
+        );
 
         const data = await response.json();
-        res.json({ answer: data.choices[0].message.content });
+        console.log("Réponse Gemini:", JSON.stringify(data));
+        res.json({ answer: data.candidates[0].content.parts[0].text });
 
     } catch (err) {
+        console.log("Erreur:", err.message);
         res.json({ answer: "Erreur, contacte un vrai modérateur." });
     }
 });
