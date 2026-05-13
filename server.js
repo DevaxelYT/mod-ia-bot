@@ -8,11 +8,14 @@ app.get('/', (req, res) => res.send('OK'));
 app.post('/ask', async (req, res) => {
     const { question, player, context } = req.body;
     console.log("Requête reçue de:", player, "| Question:", question);
+    
     const postData = JSON.stringify({
         model: "command-a-03-2025",
-        preamble: context,
+        max_tokens: 100,
+        preamble: context + " IMPORTANT: Réponds en maximum 2 phrases courtes, pas plus.",
         message: player + " demande : " + question
     });
+
     const options = {
         hostname: 'api.cohere.com',
         path: '/v1/chat',
@@ -23,6 +26,7 @@ app.post('/ask', async (req, res) => {
             'Content-Length': Buffer.byteLength(postData)
         }
     };
+
     const request = https.request(options, (response) => {
         let data = '';
         response.on('data', (chunk) => { data += chunk; });
@@ -32,14 +36,17 @@ app.post('/ask', async (req, res) => {
                 console.log("Réponse Cohere:", JSON.stringify(parsed));
                 res.json({ answer: parsed.text });
             } catch (e) {
-                res.json({ answer: "Erreur, contacte un vrai modérateur." });
+                console.log("Parse error:", e.message);
+                res.json({ answer: "Erreur parsing." });
             }
         });
     });
+
     request.on('error', (err) => {
         console.log("Erreur:", err.message);
         res.json({ answer: "Erreur, contacte un vrai modérateur." });
     });
+
     request.write(postData);
     request.end();
 });
