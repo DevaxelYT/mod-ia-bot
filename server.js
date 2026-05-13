@@ -34,10 +34,10 @@ app.post('/ask', async (req, res) => {
             try {
                 const parsed = JSON.parse(data);
                 console.log("Réponse Cohere:", JSON.stringify(parsed));
-                res.json({ answer: parsed.text });
+                res.json(parsed.text);
             } catch (e) {
                 console.log("Parse error:", e.message);
-                res.json({ answer: "Erreur parsing." });
+                res.json("Erreur parsing.");
             }
         });
     });
