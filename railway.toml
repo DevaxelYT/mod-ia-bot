@@ -1,3 +1,4 @@
 [deploy]
 healthcheckPath = "/"
 healthcheckTimeout = 30
+restartPolicyType = "never"
