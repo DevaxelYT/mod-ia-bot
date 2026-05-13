@@ -1,56 +1,26 @@
-const express = require('express');
-const https = require('https');
-const app = express();
-app.use(express.json());
+const express = require("express")
 
-app.get('/', (req, res) => res.send('OK'));
+const app = express()
 
-app.post('/ask', async (req, res) => {
-    const { question, player, context } = req.body;
-    console.log("Requête reçue de:", player, "| Question:", question);
-    
-    const postData = JSON.stringify({
-        model: "command-a-03-2025",
-        max_tokens: 100,
-        preamble: context + " IMPORTANT: Réponds en maximum 2 phrases courtes, pas plus.",
-        message: player + " demande : " + question
-    });
+app.use(express.json())
 
-    const options = {
-        hostname: 'api.cohere.com',
-        path: '/v1/chat',
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.COHERE_API_KEY,
-            'Content-Length': Buffer.byteLength(postData)
-        }
-    };
+app.get("/", (req, res) => {
+    res.send("OK")
+})
 
-    const request = https.request(options, (response) => {
-        let data = '';
-        response.on('data', (chunk) => { data += chunk; });
-        response.on('end', () => {
-            try {
-                const parsed = JSON.parse(data);
-                console.log("Réponse Cohere:", JSON.stringify(parsed));
-                res.json({ answer: parsed.text });
-            } catch (e) {
-                console.log("Parse error:", e.message);
-                res.json({ answer: "Erreur parsing." });
-            }
-        });
-    });
+app.post("/ask", (req, res) => {
 
-    request.on('error', (err) => {
-        console.log("Erreur:", err.message);
-        res.json({ answer: "Erreur, contacte un vrai modérateur." });
-    });
+    const question = req.body.question || "vide"
 
-    request.write(postData);
-    request.end();
-});
+    res.setHeader("Content-Type", "application/json")
 
-app.listen(process.env.PORT || 3000, () => {
-    console.log("Bot Mod IA démarré !");
-});
+    return res.send(JSON.stringify({
+        answer: "Tu as dit : " + question
+    }))
+})
+
+const PORT = process.env.PORT || 3000
+
+app.listen(PORT, () => {
+    console.log("Backend online")
+})
