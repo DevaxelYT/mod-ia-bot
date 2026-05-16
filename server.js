@@ -1,4 +1,4 @@
-Gemini response: {"error":{"code":400,"message":"API key not valid. Please pass a valid API key.","statconst express = require('express');
+const express = require('express');
 const https = require('https');
 
 const app = express();
