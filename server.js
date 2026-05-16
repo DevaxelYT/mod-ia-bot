@@ -11,26 +11,22 @@ app.post('/ask', async (req, res) => {
 
     console.log("Question de:", player, "->", question);
 
-    const prompt = context + "\n\nCurrent player: " + player + "\nCurrent message: " + question;
-
+    // Cohere gère mieux les instructions via son paramètre 'preamble'.
+    // On garde quand même la structure propre pour le message.
     const postData = JSON.stringify({
-        contents: [
-            {
-                role: "user",
-                parts: [{ text: prompt }]
-            }
-        ],
-        generationConfig: {
-            temperature: 0.3, // On baisse encore pour éviter qu'elle invente des réponses
-            maxOutputTokens: 250
-        }
+        model: 'command-r-plus',
+        message: question,
+        preamble: context + "\n\nCurrent player: " + player,
+        temperature: 0.3, // Basse température pour éviter les inventions
+        max_tokens: 250
     });
 
     const options = {
-        hostname: 'generativelanguage.googleapis.com',
-        path: '/v1beta/models/gemini-2.5-flash:generateContent?key=' + process.env.GEMINI_API_KEY,
+        hostname: 'api.cohere.com',
+        path: '/v1/chat',
         method: 'POST',
         headers: {
+            'Authorization': 'Bearer ' + process.env.COHERE_API_KEY,
             'Content-Type': 'application/json',
             'Content-Length': Buffer.byteLength(postData)
         }
@@ -42,16 +38,23 @@ app.post('/ask', async (req, res) => {
         response.on('end', () => {
             try {
                 const parsed = JSON.parse(data);
-                let msg = parsed.candidates?.[0]?.content?.parts?.[0]?.text || "Erreur IA.";
+                
+                // Si Cohere renvoie une erreur textuelle directe
+                if (parsed.message && !parsed.text) {
+                    console.log("DÉTAIL ERREUR COHERE :", parsed.message);
+                }
+
+                // Extraction de la réponse chez Cohere (le texte est dans parsed.text)
+                let msg = parsed.text || "Erreur IA.";
                 
                 // 🔥 NETTOYAGE STRICT : On vire les guillemets et les retours à la ligne superflus
                 msg = msg.replace(/^["'\s]+|["'\s]+$/g, '').trim();
                 
-                console.log("AI brute:", msg);
+                console.log("AI brute (Cohere):", msg);
 
                 res.json({ answer: msg });
             } catch (e) {
-                console.log(e);
+                console.log("Erreur crash parsing. Réponse brute :", data);
                 res.json({ answer: "Erreur parsing." });
             }
         });
@@ -66,6 +69,7 @@ app.post('/ask', async (req, res) => {
     request.end();
 });
 
+// Port configuré pour Render (10000 ou process.env.PORT)
 app.listen(process.env.PORT || 3000, () => {
-    console.log("Gemini backend started");
+    console.log("Cohere backend started");
 });
