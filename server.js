@@ -117,4 +117,3 @@ app.post('/ask', async (req, res) => {
 app.listen(process.env.PORT || 3000, () => {
 
     console.log("Gemini backend started");
-});lease pass a valid API key."}]}}
