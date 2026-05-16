@@ -21,8 +21,8 @@ app.post('/ask', async (req, res) => {
             }
         ],
         generationConfig: {
-            temperature: 0.5, // Baissé pour des réponses plus strictes sur les commandes
-            maxOutputTokens: 150
+            temperature: 0.3, // On baisse encore pour éviter qu'elle invente des réponses
+            maxOutputTokens: 100
         }
     });
 
@@ -42,11 +42,13 @@ app.post('/ask', async (req, res) => {
         response.on('end', () => {
             try {
                 const parsed = JSON.parse(data);
-                const msg = parsed.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Erreur IA.";
+                let msg = parsed.candidates?.[0]?.content?.parts?.[0]?.text || "Erreur IA.";
                 
-                console.log("AI:", msg);
+                // 🔥 NETTOYAGE STRICT : On vire les guillemets et les retours à la ligne superflus
+                msg = msg.replace(/^["'\s]+|["'\s]+$/g, '').trim();
+                
+                console.log("AI brute:", msg);
 
-                // On renvoie juste la réponse textuelle
                 res.json({ answer: msg });
             } catch (e) {
                 console.log(e);
