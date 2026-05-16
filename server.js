@@ -22,7 +22,7 @@ app.post('/ask', async (req, res) => {
         ],
         generationConfig: {
             temperature: 0.3, // On baisse encore pour éviter qu'elle invente des réponses
-            maxOutputTokens: 100
+            maxOutputTokens: 250
         }
     });
 
