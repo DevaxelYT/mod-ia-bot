@@ -12,47 +12,49 @@ app.post('/ask', async (req, res) => {
     const { question, player, context } = req.body;
 
     console.log(
-        "Requête reçue de:",
+        "Question de:",
         player,
-        "| Question:",
+        "|",
         question
     );
 
+    const finalPrompt =
+        context +
+        "\n\nJoueur: " + player +
+        "\nQuestion: " + question +
+        "\n\nRéponds naturellement.";
+
     const postData = JSON.stringify({
 
-        model: "gpt-4.1-mini",
-
-        messages: [
+        contents: [
             {
-                role: "system",
-                content:
-                    context +
-                    "\nIMPORTANT: Réponds en maximum 2 phrases courtes."
-            },
-            {
-                role: "user",
-                content:
-                    player + " demande : " + question
+                parts: [
+                    {
+                        text: finalPrompt
+                    }
+                ]
             }
         ],
 
-        max_tokens: 100,
-        temperature: 0.7
+        generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 120
+        }
+
     });
 
     const options = {
 
-        hostname: 'api.openai.com',
+        hostname: 'generativelanguage.googleapis.com',
 
-        path: '/v1/chat/completions',
+        path:
+            '/v1beta/models/gemini-2.5-flash:generateContent?key=' +
+            process.env.GEMINI_API_KEY,
 
         method: 'POST',
 
         headers: {
             'Content-Type': 'application/json',
-            'Authorization':
-                'Bearer ' + process.env.OPENAI_API_KEY,
-
             'Content-Length':
                 Buffer.byteLength(postData)
         }
@@ -73,12 +75,14 @@ app.post('/ask', async (req, res) => {
                 const parsed = JSON.parse(data);
 
                 console.log(
-                    "Réponse OpenAI:",
+                    "Gemini response:",
                     JSON.stringify(parsed)
                 );
 
                 const msg =
-                    parsed.choices?.[0]?.message?.content
+                    parsed.candidates?.[0]
+                    ?.content?.parts?.[0]
+                    ?.text
                     || "Erreur IA.";
 
                 res.json({
@@ -101,11 +105,14 @@ app.post('/ask', async (req, res) => {
 
     request.on('error', (err) => {
 
-        console.log("Erreur:", err.message);
+        console.log(
+            "Erreur:",
+            err.message
+        );
 
         res.json({
             answer:
-                "Erreur, contacte un vrai modérateur."
+                "Erreur backend."
         });
     });
 
@@ -116,5 +123,5 @@ app.post('/ask', async (req, res) => {
 
 app.listen(process.env.PORT || 3000, () => {
 
-    console.log("Bot Mod IA démarré !");
+    console.log("Gemini ModIA started!");
 });
