@@ -11,19 +11,26 @@ app.post('/ask', async (req, res) => {
 
     console.log("Question de:", player, "->", question);
 
-    // Cohere gère mieux les instructions via son paramètre 'preamble'.
-    // On garde quand même la structure propre pour le message.
+    // Structure mise à jour pour l'API Cohere v2 (Format universel)
     const postData = JSON.stringify({
-        model: 'command-r-plus',
-        message: question,
-        preamble: context + "\n\nCurrent player: " + player,
-        temperature: 0.3, // Basse température pour éviter les inventions
+        model: 'command-r-08-2024',
+        messages: [
+            {
+                role: 'system',
+                content: context + "\n\nCurrent player: " + player
+            },
+            {
+                role: 'user',
+                content: question
+            }
+        ],
+        temperature: 0.3,
         max_tokens: 250
     });
 
     const options = {
         hostname: 'api.cohere.com',
-        path: '/v1/chat',
+        path: '/v2/chat', // Passage à l'API v2 sécurisée
         method: 'POST',
         headers: {
             'Authorization': 'Bearer ' + process.env.COHERE_API_KEY,
@@ -39,29 +46,29 @@ app.post('/ask', async (req, res) => {
             try {
                 const parsed = JSON.parse(data);
                 
-                // Si Cohere renvoie une erreur textuelle directe
-                if (parsed.message && !parsed.text) {
-                    console.log("DÉTAIL ERREUR COHERE :", parsed.message);
+                // Gestion des logs d'erreurs renvoyés par Cohere
+                if (parsed.error || parsed.message) {
+                    console.log("DÉTAIL ERREUR API :", parsed.error || parsed.message);
                 }
 
-                // Extraction de la réponse chez Cohere (le texte est dans parsed.text)
-                let msg = parsed.text || "Erreur IA.";
+                // Dans l'API v2, la réponse se trouve dans message.content[0].text
+                let msg = parsed.message?.content?.[0]?.text || "Erreur IA.";
                 
-                // 🔥 NETTOYAGE STRICT : On vire les guillemets et les retours à la ligne superflus
+                // NETTOYAGE STRICT
                 msg = msg.replace(/^["'\s]+|["'\s]+$/g, '').trim();
                 
-                console.log("AI brute (Cohere):", msg);
+                console.log("AI brute (Cohere v2):", msg);
 
                 res.json({ answer: msg });
             } catch (e) {
-                console.log("Erreur crash parsing. Réponse brute :", data);
+                console.log("Erreur crash parsing. Réponse brute du serveur :", data);
                 res.json({ answer: "Erreur parsing." });
             }
         });
     });
 
     request.on('error', (err) => {
-        console.log(err);
+        console.log("Erreur de connexion au backend :", err);
         res.json({ answer: "Erreur backend." });
     });
 
@@ -69,7 +76,6 @@ app.post('/ask', async (req, res) => {
     request.end();
 });
 
-// Port configuré pour Render (10000 ou process.env.PORT)
 app.listen(process.env.PORT || 3000, () => {
-    console.log("Cohere backend started");
+    console.log("Cohere v2 backend started");
 });
